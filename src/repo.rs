@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::package::{ArchiveType, EncryptionType};
-use std::fs::File;
+use std::fs::{File, read_dir};
 use std::io::prelude::*;
 
 static REPO_CONFIG_FILE: &str = ".snake_repo";
@@ -23,7 +23,22 @@ impl RepoStructure {
         }
     }
 
-    pub fn read_repo_structure(repo_file: &mut File) -> RepoStructure {
+    fn scan_repo_config() -> Option<File> {
+        let home_path = home::home_dir()
+            .unwrap();
+        let repo_conf = format!("{}/{REPO_CONFIG_FILE}", home_path.display());
+
+        match File::open(repo_conf) {
+            Ok(f) => Some(f),
+            Err(_) => None
+        }
+    }
+
+    pub fn read_repo_structure() -> RepoStructure {
+        let mut repo_file = match RepoStructure::scan_repo_config() {
+            Some(f) => f,
+            None => panic!("Configuration file can't be found!")
+        };
         let mut repo_body = String::new();
         let mut repo_struct = RepoStructure::new();
 
